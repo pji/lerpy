@@ -6,6 +6,8 @@ Linear interpolation functions.
 """
 import numpy as np
 
+from lerpy.utility import print_array
+
 
 # Constants.
 X, Y = -1, -2
@@ -73,11 +75,15 @@ def _build_grids(a: np.ndarray,
     # old pixel values. The key indicates the position of the pixel
     # on each axis, with one meaning the position is ahead of the
     # new pixel, and zero meaning the position is behind it.
-    hashes = [f'{n:>02b}'[::-1] for n in range(2 ** len(size))]
+    num_dim = len(size)
+    axes = range(num_dim)
+    tmp = '{:>0' + str(num_dim) + 'b}'
+    hashes = [tmp.format(n)[::-1] for n in range(2 ** num_dim)]
     hash_table = {}
 
     # The original array needs to be made one dimensional for the
     # numpy.take operation that will occur as we build the tables.
+    orig_shape = a.shape
     raveled = np.ravel(a)
 
     # Build the table that contains the old pixel values to
@@ -87,7 +93,7 @@ def _build_grids(a: np.ndarray,
 
         # Use the hash key to adjust the which old pixel we are
         # looking at.
-        for axis in Y, X:
+        for axis in axes:
             if hash[axis] == '1':
                 hash_whole[axis] += 1
 
@@ -103,8 +109,13 @@ def _build_grids(a: np.ndarray,
         # map the three dimensional indices of the original array to
         # the one dimensional indices used by the raveled version of
         # that array.
-        raveled_indices = hash_whole[Y] * a.shape[X]
-        raveled_indices += hash_whole[X]
+        raveled_indices = np.zeros_like(hash_whole[0])
+        for axis in axes:
+            remaining_axes = range(num_dim)[axis + 1:]
+            axis_incr = 1
+            for r_axis in remaining_axes:
+                axis_incr *= orig_shape[r_axis]
+            raveled_indices += hash_whole[axis] * axis_incr
 
         # Get the value of the pixel in the original array.
         hash_table[hash] = np.take(raveled, raveled_indices.astype(int))
@@ -117,15 +128,16 @@ def _map_resized_array(a: np.ndarray,
     """Map out how the values of a grid are spread when the grid
     is resized.
     """
+    axes = range(len(size))
     indices = np.indices(size)
     new_ends = [s - 1 for s in size]
     old_ends = [s - 1 for s in a.shape]
     true_factors = [n / o for n, o in zip(new_ends, old_ends)]
     whole = indices.copy()
     parts = indices.copy().astype(float)
-    for i in Y, X:
-        whole[i] = (indices[i] // true_factors[i]).astype(int)
-        parts[i] = (indices[i] / true_factors[i] - whole[i]).astype(float)
+    for axis in axes:
+        whole[axis] = (indices[axis] // true_factors[axis])
+        parts[axis] = (indices[axis] / true_factors[axis] - whole[axis])
     return whole, parts
 
 
@@ -147,3 +159,25 @@ def _n_dimensional_interpolation(grids: dict[str, np.ndarray],
 
 # Function aliases.
 lerp = linear_interpolation
+
+if __name__ == '__main__':
+    a = np.array([
+        [
+            [0.0, 1.0, 2.0, ],
+            [1.0, 2.0, 3.0, ],
+            [2.0, 3.0, 4.0, ],
+        ],
+        [
+            [1.0, 2.0, 3.0, ],
+            [2.0, 3.0, 4.0, ],
+            [3.0, 4.0, 5.0, ],
+        ],
+        [
+            [2.0, 3.0, 4.0, ],
+            [3.0, 4.0, 5.0, ],
+            [4.0, 5.0, 6.0, ],
+        ],
+    ])
+    size = (5, 5, 5)
+    result = resize_array(a, size)
+    print_array(result, 2, dec_round=1)

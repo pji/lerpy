@@ -88,9 +88,79 @@ class LinearInterpolationTestCase(ArrayTestCase):
 
 
 class ResizeArrayTestCase(ArrayTestCase):
+    def test_three_dimensions(self):
+        """Given a three-dimensional array and a new size, return an
+        array of the new size with the data resized through trilinear
+        interpolation.
+        """
+        # Expected values.
+        exp = np.array([
+            [
+                [0.0, 0.5, 1.0, 1.5, 2.0],
+                [0.5, 1.0, 1.5, 2.0, 2.5],
+                [1.0, 1.5, 2.0, 2.5, 3.0],
+                [1.5, 2.0, 2.5, 3.0, 3.5],
+                [2.0, 2.5, 3.0, 3.5, 4.0],
+            ],
+            [
+                [0.5, 1.0, 1.5, 2.0, 2.5],
+                [1.0, 1.5, 2.0, 2.5, 3.0],
+                [1.5, 2.0, 2.5, 3.0, 3.5],
+                [2.0, 2.5, 3.0, 3.5, 4.0],
+                [2.5, 3.0, 3.5, 4.0, 4.5],
+            ],
+            [
+                [1.0, 1.5, 2.0, 2.5, 3.0],
+                [1.5, 2.0, 2.5, 3.0, 3.5],
+                [2.0, 2.5, 3.0, 3.5, 4.0],
+                [2.5, 3.0, 3.5, 4.0, 4.5],
+                [3.0, 3.5, 4.0, 4.5, 5.0],
+            ],
+            [
+                [1.5, 2.0, 2.5, 3.0, 3.5],
+                [2.0, 2.5, 3.0, 3.5, 4.0],
+                [2.5, 3.0, 3.5, 4.0, 4.5],
+                [3.0, 3.5, 4.0, 4.5, 5.0],
+                [3.5, 4.0, 4.5, 5.0, 5.5],
+            ],
+            [
+                [2.0, 2.5, 3.0, 3.5, 4.0],
+                [2.5, 3.0, 3.5, 4.0, 4.5],
+                [3.0, 3.5, 4.0, 4.5, 5.0],
+                [3.5, 4.0, 4.5, 5.0, 5.5],
+                [4.0, 4.5, 5.0, 5.5, 6.0],
+            ],
+        ])
+
+        # Test data and state.
+        a = np.array([
+            [
+                [0.0, 1.0, 2.0, ],
+                [1.0, 2.0, 3.0, ],
+                [2.0, 3.0, 4.0, ],
+            ],
+            [
+                [1.0, 2.0, 3.0, ],
+                [2.0, 3.0, 4.0, ],
+                [3.0, 4.0, 5.0, ],
+            ],
+            [
+                [2.0, 3.0, 4.0, ],
+                [3.0, 4.0, 5.0, ],
+                [4.0, 5.0, 6.0, ],
+            ],
+        ])
+        size = (5, 5, 5)
+
+        # Run test.
+        act = lp.resize_array(a, size)
+
+        # Determine test result.
+        self.assertArrayEqual(exp, act)
+
     def test_resize_two_dimensions(self):
         """Given a two-dimensional array and a new size, return an
-        array of the new size, with the data resized through bilinear
+        array of the new size with the data resized through bilinear
         interpolation.
         """
         # Expected values.
