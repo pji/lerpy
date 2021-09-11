@@ -19,7 +19,7 @@ def linear_interpolation(a: np.ndarray,
     :param b: The "right" values.
     :param x: An array of how close the location of the final value
         should be to the "left" value.
-    :return: A :class:ndarray object
+    :return: A :class:np.ndarray object.
     :rtype: numpy.ndarray
 
     Usage::
@@ -35,18 +35,44 @@ def linear_interpolation(a: np.ndarray,
     return a * (1 - x) + b * x
 
 
-def n_dimensional_interpolation(a: np.ndarray,
-                                b: np.ndarray,
-                                x: np.ndarray) -> np.ndarray:
-    """Interpolate the values of each pixel of image data."""
+def n_dimensional_linear_interpolation(a: np.ndarray,
+                                       b: np.ndarray,
+                                       x: np.ndarray) -> np.ndarray:
+    """Interpolate the values of each pixel of image data.
+
+    :param a: The "left" values.
+    :param b: The "right" values.
+    :param x: An array of how close the location of the final value
+        should be to the "left" value.
+    :return: A :class:numpy.ndarray object.
+    :rtype: numpy.ndarray
+
+    Usage::
+
+        >>> import numpy as np
+        >>>
+        >>> a = np.zeros((2, 3, 3), dtype=int)
+        >>> b = np.full((2, 3, 3), 255, dtype=int)
+        >>> x = np.linspace(0.0, 1.0, 18, True, False, float)
+        >>> x = x.reshape((2, 3, 3))
+        >>> n_dimensional_linear_interpolation(a, b, x)
+        array([[135., 150., 165.],
+               [180., 195., 210.],
+               [225., 240., 255.]])
+    """
     if len(x) > 1:
         lerped = lerp(a, b, x[-1])
         a = lerped[::2]
         b = lerped[1::2]
-        return n_dimensional_interpolation(a, b, x[:-1])
+        return n_dimensional_linear_interpolation(a, b, x[:-1])
 
     result = lerp(a, b, x[0])
     return result[0]
+
+
+# Function aliases.
+lerp = linear_interpolation
+ndlerp = n_dimensional_linear_interpolation
 
 
 # Public utility functions.
@@ -72,7 +98,7 @@ def resize_array(a: np.ndarray, size: tuple[int, ...]) -> np.ndarray:
     a, b = _build_sides(a, size, whole)
 
     # Perform the interpolation using the mapped space and return.
-    return n_dimensional_interpolation(a, b, x)
+    return n_dimensional_linear_interpolation(a, b, x)
 
 
 # Private functions.
@@ -159,10 +185,6 @@ def _map_resized_array(a: np.ndarray,
     return whole, parts
 
 
-# Function aliases.
-lerp = linear_interpolation
-nderp = n_dimensional_interpolation
-
 if __name__ == '__main__':
     a = np.array([
         [
@@ -201,5 +223,5 @@ if __name__ == '__main__':
         ],
     ])
     size = (5, 5, 5)
-    result = nderp(a, b, x)
+    result = ndlerp(a, b, x)
     print_array(result, 2, dec_round=1)

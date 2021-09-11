@@ -32,7 +32,7 @@ class LinearInterpolationTestCase(ArrayTestCase):
         self.assertArrayEqual(exp, act)
 
 
-class NDimensionalInterpolationTestCase(ArrayTestCase):
+class NDimensionalLinearInterpolationTestCase(ArrayTestCase):
     def test_two_dimensions(self):
         '''Given two arrays of values and an array of distances, return
         an array with the bilinear interpolation of the value arrays.
@@ -83,7 +83,7 @@ class NDimensionalInterpolationTestCase(ArrayTestCase):
         ])
 
         # Run test.
-        act = lp.n_dimensional_interpolation(a, b, x)
+        act = lp.n_dimensional_linear_interpolation(a, b, x)
 
         # Determine test result.
         self.assertArrayEqual(exp, act)
