@@ -9,11 +9,7 @@ import numpy as np
 from lerpy.utility import print_array
 
 
-# Constants.
-X, Y = -1, -2
-
-
-# Public functions.
+# Public interpolation functions.
 def linear_interpolation(a: np.ndarray,
                          b: np.ndarray,
                          x: np.ndarray) -> np.ndarray:
@@ -39,6 +35,21 @@ def linear_interpolation(a: np.ndarray,
     return a * (1 - x) + b * x
 
 
+def n_dimensional_interpolation(a: np.ndarray,
+                                b: np.ndarray,
+                                x: np.ndarray) -> np.ndarray:
+    """Interpolate the values of each pixel of image data."""
+    if len(x) > 1:
+        lerped = lerp(a, b, x[-1])
+        a = lerped[::2]
+        b = lerped[1::2]
+        return n_dimensional_interpolation(a, b, x[:-1])
+
+    result = lerp(a, b, x[0])
+    return result[0]
+
+
+# Public utility functions.
 def resize_array(a: np.ndarray, size: tuple[int, ...]) -> np.ndarray:
     """Resize an two dimensional array using linear interpolation.
 
@@ -57,17 +68,17 @@ def resize_array(a: np.ndarray, size: tuple[int, ...]) -> np.ndarray:
 
     # Map out the relationship between the old space and the
     # new space.
-    whole, parts = _map_resized_array(a, size)
-    grids = _build_grids(a, size, whole)
+    whole, x = _map_resized_array(a, size)
+    a, b = _build_sides(a, size, whole)
 
     # Perform the interpolation using the mapped space and return.
-    return _n_dimensional_interpolation(grids, parts)
+    return n_dimensional_interpolation(a, b, x)
 
 
 # Private functions.
-def _build_grids(a: np.ndarray,
+def _build_sides(a: np.ndarray,
                  size: tuple[int, ...],
-                 whole: np.ndarray) -> dict[str, np.ndarray]:
+                 whole: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     """Build the grids used in an n-dimensional interpolation."""
     # Linear interpolation determines the value of a new pixel by
     # comparing the values of the eight old pixels that surround it.
@@ -79,7 +90,9 @@ def _build_grids(a: np.ndarray,
     axes = range(num_dim)
     tmp = '{:>0' + str(num_dim) + 'b}'
     hashes = [tmp.format(n)[::-1] for n in range(2 ** num_dim)]
-    hash_table = {}
+    size_sides = (int(len(hashes) / 2), *size)
+    a_sides = np.zeros(size_sides, dtype=a.dtype)
+    b_sides = np.zeros(size_sides, dtype=a.dtype)
 
     # The original array needs to be made one dimensional for the
     # numpy.take operation that will occur as we build the tables.
@@ -118,9 +131,14 @@ def _build_grids(a: np.ndarray,
             raveled_indices += hash_whole[axis] * axis_incr
 
         # Get the value of the pixel in the original array.
-        hash_table[hash] = np.take(raveled, raveled_indices.astype(int))
+        side = np.take(raveled, raveled_indices.astype(int))
+        index = int(int(hash, 2) // 2)
+        if hash.endswith('0'):
+            a_sides[index] = side
+        else:
+            b_sides[index] = side
 
-    return hash_table
+    return a_sides, b_sides
 
 
 def _map_resized_array(a: np.ndarray,
@@ -141,24 +159,9 @@ def _map_resized_array(a: np.ndarray,
     return whole, parts
 
 
-def _n_dimensional_interpolation(grids: dict[str, np.ndarray],
-                                 parts: np.ndarray) -> np.ndarray:
-    """Interpolate the values of each pixel of image data."""
-    if len(grids) > 2:
-        new_grids = {}
-        evens = [k for k in grids if k.endswith('0')]
-        odds = [k for k in grids if k.endswith('1')]
-        for even, odd in zip(evens, odds):
-            new_key = even[:-1]
-            axis = len(new_key)
-            new_grids[new_key] = lerp(grids[even], grids[odd], parts[-1])
-        return _n_dimensional_interpolation(new_grids, parts[:-1])
-
-    return lerp(grids['0'], grids['1'], parts[-1])
-
-
 # Function aliases.
 lerp = linear_interpolation
+nderp = n_dimensional_interpolation
 
 if __name__ == '__main__':
     a = np.array([
@@ -172,12 +175,31 @@ if __name__ == '__main__':
             [2.0, 3.0, 4.0, ],
             [3.0, 4.0, 5.0, ],
         ],
+    ])
+    b = np.array([
+        [
+            [1.0, 2.0, 3.0, ],
+            [2.0, 3.0, 4.0, ],
+            [3.0, 4.0, 5.0, ],
+        ],
         [
             [2.0, 3.0, 4.0, ],
             [3.0, 4.0, 5.0, ],
             [4.0, 5.0, 6.0, ],
         ],
     ])
+    x = np.array([
+        [
+            [0.5, 0.5, 0.5, ],
+            [0.5, 0.5, 0.5, ],
+            [0.5, 0.5, 0.5, ],
+        ],
+        [
+            [0.5, 0.5, 0.5, ],
+            [0.5, 0.5, 0.5, ],
+            [0.5, 0.5, 0.5, ],
+        ],
+    ])
     size = (5, 5, 5)
-    result = resize_array(a, size)
+    result = nderp(a, b, x)
     print_array(result, 2, dec_round=1)
