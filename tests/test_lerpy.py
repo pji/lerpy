@@ -11,6 +11,48 @@ from tests.common import ArrayTestCase
 
 
 # Test cases.
+class CubicInterpolcationTestCase(ArrayTestCase):
+    def test_cubic_interpolation(self):
+        """Given four arrays of values named a, b, c, and d and an
+        array of distances between the points in the b and c arrays,
+        return an array of the interpolated values.
+        """
+        # Expected values.
+        exp = np.array([0.3750, 2.2500, 6.2500, 12.2500])
+
+        # Test data and state.
+        a_ = np.array([-1.0, 0.0, 1.0, 4.0])
+        a = np.array([0.0, 1.0, 4.0, 9.0])
+        b = np.array([1.0, 4.0, 9.0, 16.0])
+        b_ = np.array([4.0, 9.0, 16.0, 25.0])
+        x = np.array([0.5, 0.5, 0.5, 0.5])
+
+        # Run test.
+        act = lp.cubic_interpolation(a, b, x, a_, b_)
+
+        # Determine test result.
+        self.assertArrayEqual(exp, act)
+
+    def test_cubic_interpolation_without_primes(self):
+        """Given two arrays of values named a, b, and an
+        array of distances between the points in two arrays,
+        return an array of the interpolated values.
+        """
+        # Expected values.
+        exp = np.array([0.3125, 2.2500, 6.2500, 12.8125])
+
+        # Test data and state.
+        a = np.array([0.0, 1.0, 4.0, 9.0])
+        b = np.array([1.0, 4.0, 9.0, 16.0])
+        x = np.array([0.5, 0.5, 0.5, 0.5])
+
+        # Run test.
+        act = lp.cubic_interpolation(a, b, x)
+
+        # Determine test result.
+        self.assertArrayEqual(exp, act)
+
+
 class LinearInterpolationTestCase(ArrayTestCase):
     def test_linear_interpolation(self):
         """Given two linear arrays of values and one linear array of

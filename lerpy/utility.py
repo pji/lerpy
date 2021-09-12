@@ -4,6 +4,9 @@ utility
 
 Utility functions for the lerpy module.
 """
+from functools import wraps
+from typing import Callable
+
 import numpy as np
 
 
@@ -23,3 +26,16 @@ def print_array(a: np.ndarray, depth: int = 0, dec_round: int = 4) -> None:
             tmp = '{}'
         nums = [tmp.format(n) for n in a]
         print(' ' * (4 * depth) + '[' + ', '.join(nums) + '],')
+
+
+# Decorators.
+def preserves_type(fn: Callable) -> Callable:
+    """Ensure the datatype of the result is the same as the
+    first parameter.
+    """
+    @wraps(fn)
+    def wrapper(a: np.ndarray, *args, **kwargs) -> np.ndarray:
+        a_dtype = a.dtype
+        result = fn(a, *args, **kwargs)
+        return result.astype(a_dtype)
+    return wrapper

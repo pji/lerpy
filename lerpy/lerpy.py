@@ -4,12 +4,57 @@ lerpy
 
 Linear interpolation functions.
 """
+from typing import Optional
+
 import numpy as np
 
-from lerpy.utility import print_array
+from lerpy.utility import preserves_type, print_array
 
 
 # Public interpolation functions.
+@preserves_type
+def cubic_interpolation(a: np.ndarray,
+                        b: np.ndarray,
+                        x: np.ndarray,
+                        a_: Optional[np.ndarray] = None,
+                        b_: Optional[np.ndarray] = None) -> np.ndarray:
+    """Perform a cubic interpolation on the values of four arrays.
+    This is adapted from code found at:
+
+        https://www.paulinternet.nl/?page=bicubic
+
+    :param a: The closest value on the "left" side.
+    :param b: The closest value on the "right" side.
+    :param x: How close the final value is to the closest "left" value.
+    :param a_: (Optional.) The farther value on the "left" side.
+    :param b_: (Optional.) The farther value on the "right" side.
+    :return: A :class:ndarray object.
+    :rtype: numpy.ndarray
+    """
+    # Cubic interpolation needs two points to the left of the
+    # interpolation spot and two points to the right. If only two
+    # points were given, assume they are the closest points on
+    # side of the interpolation and create arrays for the missing
+    # further points using the given points.
+    #
+    # Note: At the edges, this guesses the values by repeating values.
+    # This isn't as accurate as passing in better values with a_
+    # and b_.
+    if a_ is None:
+        a_ = np.roll(a, 1, -1)
+        a_[..., 0] = a[..., 0]
+    if b_ is None:
+        b_ = np.roll(b, -1, -1)
+        b_[..., -1] = b[..., -1]
+
+    # Perform the interpolation. This is broken up to keep it within
+    # the 80 character width limit.
+    part1 = (3 * (a - b) + b_ - a_)
+    part2 = (2 * a_ - 5 * a + 4 * b - b_ + x * part1)
+    return a + 0.5 * x * (b - a_ + x * part2)
+
+
+@preserves_type
 def linear_interpolation(a: np.ndarray,
                          b: np.ndarray,
                          x: np.ndarray) -> np.ndarray:
@@ -20,7 +65,7 @@ def linear_interpolation(a: np.ndarray,
     :param b: The "right" values.
     :param x: An array of how close the location of the final value
         should be to the "left" value.
-    :return: A :class:np.ndarray object.
+    :return: A :class:ndarray object.
     :rtype: numpy.ndarray
 
     Usage::
@@ -33,9 +78,7 @@ def linear_interpolation(a: np.ndarray,
         >>> linear_interpolation(a, b, x)
         array([2, 3, 4])
     """
-    return_dtype = a.dtype
-    result = a * (1 - x) + b * x
-    return result.astype(return_dtype)
+    return a * (1 - x) + b * x
 
 
 def n_dimensional_linear_interpolation(a: np.ndarray,
@@ -47,7 +90,7 @@ def n_dimensional_linear_interpolation(a: np.ndarray,
     :param b: The "right" values.
     :param x: An array of how close the location of the final value
         should be to the "left" value.
-    :return: A :class:numpy.ndarray object.
+    :return: A :class:ndarray object.
     :rtype: numpy.ndarray
 
     Usage::
@@ -74,6 +117,7 @@ def n_dimensional_linear_interpolation(a: np.ndarray,
 
 
 # Function aliases.
+cerp = cubic_interpolation
 lerp = linear_interpolation
 ndlerp = n_dimensional_linear_interpolation
 
@@ -189,42 +233,10 @@ def _map_resized_array(a: np.ndarray,
 
 
 if __name__ == '__main__':
-    a = np.array([
-        [
-            [0.0, 1.0, 2.0, ],
-            [1.0, 2.0, 3.0, ],
-            [2.0, 3.0, 4.0, ],
-        ],
-        [
-            [1.0, 2.0, 3.0, ],
-            [2.0, 3.0, 4.0, ],
-            [3.0, 4.0, 5.0, ],
-        ],
-    ])
-    b = np.array([
-        [
-            [1.0, 2.0, 3.0, ],
-            [2.0, 3.0, 4.0, ],
-            [3.0, 4.0, 5.0, ],
-        ],
-        [
-            [2.0, 3.0, 4.0, ],
-            [3.0, 4.0, 5.0, ],
-            [4.0, 5.0, 6.0, ],
-        ],
-    ])
-    x = np.array([
-        [
-            [0.5, 0.5, 0.5, ],
-            [0.5, 0.5, 0.5, ],
-            [0.5, 0.5, 0.5, ],
-        ],
-        [
-            [0.5, 0.5, 0.5, ],
-            [0.5, 0.5, 0.5, ],
-            [0.5, 0.5, 0.5, ],
-        ],
-    ])
-    size = (5, 5, 5)
-    result = ndlerp(a, b, x)
-    print_array(result, 2, dec_round=1)
+    a_ = np.array([0.0, 0.0, 1.0, 4.0])
+    a = np.array([0.0, 1.0, 4.0, 9.0])
+    b = np.array([1.0, 4.0, 9.0, 16.0])
+    b_ = np.array([4.0, 9.0, 16.0, 16.0])
+    x = np.array([0.5, 0.5, 0.5, 0.5])
+    result = cerp(a, b, x, a_, b_)
+    print_array(result, 2, dec_round=4)
