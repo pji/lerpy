@@ -15,7 +15,8 @@ def linear_interpolation(a: np.ndarray,
                          x: np.ndarray) -> np.ndarray:
     """Perform a linear interpolation on the values of two arrays
 
-    :param a: The "left" values.
+    :param a: The "left" values. The datatype of a also determines the
+        datatype of the returned array.
     :param b: The "right" values.
     :param x: An array of how close the location of the final value
         should be to the "left" value.
@@ -30,9 +31,11 @@ def linear_interpolation(a: np.ndarray,
         >>> b = np.array([3, 4, 5])
         >>> x = np.array([.5, .5, .5])
         >>> linear_interpolation(a, b, x)
-        array([2., 3., 4.])
+        array([2, 3, 4])
     """
-    return a * (1 - x) + b * x
+    return_dtype = a.dtype
+    result = a * (1 - x) + b * x
+    return result.astype(return_dtype)
 
 
 def n_dimensional_linear_interpolation(a: np.ndarray,
@@ -56,9 +59,9 @@ def n_dimensional_linear_interpolation(a: np.ndarray,
         >>> x = np.linspace(0.0, 1.0, 18, True, False, float)
         >>> x = x.reshape((2, 3, 3))
         >>> n_dimensional_linear_interpolation(a, b, x)
-        array([[135., 150., 165.],
-               [180., 195., 210.],
-               [225., 240., 255.]])
+        array([[135, 150, 165],
+               [179, 194, 210],
+               [225, 240, 255]])
     """
     if len(x) > 1:
         lerped = lerp(a, b, x[-1])

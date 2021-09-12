@@ -31,6 +31,25 @@ class LinearInterpolationTestCase(ArrayTestCase):
         # Determine test result.
         self.assertArrayEqual(exp, act)
 
+    def test_perserving_array_data_type(self):
+        """The returned array should have the same datatype as the
+        first of the given value arrays.
+        """
+        # Expected value.
+        exp = np.uint8
+
+        # Test data and state.
+        a = np.array([0, 1, 2, 3], dtype=exp)
+        b = np.array([1, 2, 3, 4], dtype=exp)
+        x = np.array([0.5, 0.5, 0.5, 0.5], dtype=float)
+
+        # Run test.
+        result = lp.linear_interpolation(a, b, x)
+        act = result.dtype
+
+        # Determine test result.
+        self.assertEqual(exp, act)
+
 
 class NDimensionalLinearInterpolationTestCase(ArrayTestCase):
     def test_two_dimensions(self):
