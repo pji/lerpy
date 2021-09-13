@@ -176,9 +176,7 @@ def build_resizing_matrices(src_shape: tuple[int, ...],
     # The relative positions of the points compared to the interpolated
     # value is coded by a binary text string where 1 is after the value
     # on the axis and 0 is before the value.
-    rel_position_tmp = '{:>0' + str(num_dim) + 'b}'
-    rel_positions = [rel_position_tmp.format(p)[::-1] for p in points]
-    rel_positions = sorted(rel_positions)
+    rel_positions = _build_relative_position_masks(num_dim)
 
     # Create the map for position 0, which is before the interpolated
     # value on every axis.
@@ -243,6 +241,16 @@ def resize_array(src: np.ndarray,
 
 
 # Private functions.
+def _build_relative_position_masks(dimensions: int) -> list[str]:
+    """Create the masks for identifying the different points used in
+    an n-dimensional interpolation.
+    """
+    points = range(2 ** dimensions)
+    mask_template = '{:>0' + str(dimensions) + 'b}'
+    mask = [mask_template.format(p)[::-1] for p in points]
+    return sorted(mask)
+
+
 def _get_resizing_factors(src_shape: tuple[int, ...],
                           dst_shape: tuple[int, ...]) -> tuple[float, ...]:
     """Determine how much each axis is resized by."""
