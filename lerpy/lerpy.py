@@ -153,6 +153,34 @@ ndlerp = n_dimensional_linear_interpolation
 
 
 # Public utility functions.
+def build_resizing_matrix(src_shape: tuple[int, ...],
+                          dst_shape: tuple[int, ...]
+                          ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Create the indexing and distance arrays needed to interpolate
+    values when resizing an array.
+
+    :param src_shape: The original shape of the array.
+    :param dst_shape: The resized shape of the array.
+    :return: A :class:tuple object.
+    :rtype: tuple
+    """
+    # Interpolation guesses a value between known data values. To
+    # do this you need to know those points. The number of points
+    # surrounding the value being guessed is the square of the
+    # dimensions in the array.
+    num_dim = len(src_shape)
+    points = range(2 ** num_dim)
+    axes = range(num_dim)
+
+    # The relative positions of the points compared to the interpolated
+    # value is coded by a binary text string where 1 is after the value
+    # on the axis and 0 is before the value.
+    rel_position_tmp = '{:>0' + str(num_dim) + 'b}'
+    rel_positions = [rel_position_tmp.format(p)[::-1] for p in points]
+
+    raise NotImplementedError
+
+
 def resize_array(a: np.ndarray, size: tuple[int, ...]) -> np.ndarray:
     """Resize an two dimensional array using linear interpolation.
 
