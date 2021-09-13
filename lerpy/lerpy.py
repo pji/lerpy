@@ -5,6 +5,7 @@ lerpy
 Python interpolation functions.
 """
 from functools import partial
+from math import prod
 from typing import Callable, Optional
 
 import numpy as np
@@ -153,9 +154,9 @@ ndlerp = n_dimensional_linear_interpolation
 
 
 # Public utility functions.
-def build_resizing_matrix(src_shape: tuple[int, ...],
-                          dst_shape: tuple[int, ...]
-                          ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+def build_resizing_matrices(src_shape: tuple[int, ...],
+                            dst_shape: tuple[int, ...]
+                            ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Create the indexing and distance arrays needed to interpolate
     values when resizing an array.
 
@@ -169,134 +170,130 @@ def build_resizing_matrix(src_shape: tuple[int, ...],
     # surrounding the value being guessed is the square of the
     # dimensions in the array.
     num_dim = len(src_shape)
-    points = range(2 ** num_dim)
     axes = range(num_dim)
+    points = range(2 ** num_dim)
 
     # The relative positions of the points compared to the interpolated
     # value is coded by a binary text string where 1 is after the value
     # on the axis and 0 is before the value.
     rel_position_tmp = '{:>0' + str(num_dim) + 'b}'
     rel_positions = [rel_position_tmp.format(p)[::-1] for p in points]
+    rel_positions = sorted(rel_positions)
 
-    raise NotImplementedError
+    # Create the map for position 0, which is before the interpolated
+    # value on every axis.
+    factors = _get_resizing_factors(src_shape, dst_shape)
+    src_indices, x = _map_indices_and_distances(dst_shape, factors)
+
+    # Create the maps for the rest of the positions.
+    matrix_shape = (len(points) // 2, num_dim, *dst_shape)
+    a = np.zeros(matrix_shape, dtype=int)
+    b = a.copy()
+    for pos in rel_positions:
+        matrix_index = int(pos, 2) // 2
+        pos_indices = src_indices.copy()
+        for axis in axes:
+            if pos[axis] == '1':
+                pos_indices[axis] += 1
+
+                # Cap the values in the array to the highest index in
+                # the original array.
+                cap = src_shape[axis] - 1
+                pos_indices[pos_indices > cap] = cap
+
+        # Put the value in the correct side of the resizing matrices.
+        if pos.endswith('0'):
+            a[matrix_index] = pos_indices
+        else:
+            b[matrix_index] = pos_indices
+
+    # Return the arrays for the resizing interpolation.
+    return a, b, x
 
 
-def resize_array(a: np.ndarray, size: tuple[int, ...]) -> np.ndarray:
+def resize_array(src: np.ndarray,
+                 size: tuple[int, ...],
+                 interpolator: Optional[Callable] = None) -> np.ndarray:
     """Resize an two dimensional array using linear interpolation.
 
     :param a: The array to resize. The array is expected to have at
         least two dimensions.
     :param size: The shape for the resized array.
+    :param interpolator: The interpolation algorithm for the resizing.
     :return: A :class:ndarray object.
     :rtype: numpy.ndarray
     """
     # Perform defensive actions to prevent unneeded processing if
     # the array won't actually change and to make sure any changes
     # to the array won't have unexpected side effects.
-    if size == a.shape:
-        return a
-    a = a.copy()
+    if size == src.shape:
+        return src
+    src = src.copy()
 
     # Map out the relationship between the old space and the
     # new space.
-    whole, x = _map_resized_array(a, size)
-    a, b = _build_sides(a, size, whole)
+    a, b, x = build_resizing_matrices(src.shape, size)
+    a = _replace_indices_with_values(src, a)
+    b = _replace_indices_with_values(src, b)
 
     # Perform the interpolation using the mapped space and return.
-    return n_dimensional_linear_interpolation(a, b, x)
+    if interpolator is None:
+        interpolator = ndlerp
+    return interpolator(a, b, x)
 
 
 # Private functions.
-def _build_sides(a: np.ndarray,
-                 size: tuple[int, ...],
-                 whole: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-    """Build the grids used in an n-dimensional interpolation."""
-    # Linear interpolation determines the value of a new pixel by
-    # comparing the values of the eight old pixels that surround it.
-    # The hashes are the keys to the dictionary that contains those
-    # old pixel values. The key indicates the position of the pixel
-    # on each axis, with one meaning the position is ahead of the
-    # new pixel, and zero meaning the position is behind it.
-    num_dim = len(size)
-    axes = range(num_dim)
-    tmp = '{:>0' + str(num_dim) + 'b}'
-    hashes = [tmp.format(n)[::-1] for n in range(2 ** num_dim)]
-    size_sides = (int(len(hashes) / 2), *size)
-    a_sides = np.zeros(size_sides, dtype=a.dtype)
-    b_sides = np.zeros(size_sides, dtype=a.dtype)
-
-    # The original array needs to be made one dimensional for the
-    # numpy.take operation that will occur as we build the tables.
-    orig_shape = a.shape
-    raveled = np.ravel(a)
-
-    # Build the table that contains the old pixel values to
-    # interpolate.
-    for hash in hashes:
-        hash_whole = whole.copy()
-
-        # Use the hash key to adjust the which old pixel we are
-        # looking at.
-        for axis in axes:
-            if hash[axis] == '1':
-                hash_whole[axis] += 1
-
-                # Handle the pixels that were pushed off the far
-                # edge of the original array by giving them the
-                # value of the last pixel along that axis in the
-                # original array.
-                m = np.zeros(hash_whole[axis].shape, dtype=bool)
-                m[hash_whole[axis] >= a.shape[axis]] = True
-                hash_whole[axis][m] = a.shape[axis] - 1
-
-        # Since numpy.take() only works in one dimension, we need to
-        # map the three dimensional indices of the original array to
-        # the one dimensional indices used by the raveled version of
-        # that array.
-        raveled_indices = np.zeros_like(hash_whole[0])
-        for axis in axes:
-            remaining_axes = range(num_dim)[axis + 1:]
-            axis_incr = 1
-            for r_axis in remaining_axes:
-                axis_incr *= orig_shape[r_axis]
-            raveled_indices += hash_whole[axis] * axis_incr
-
-        # Get the value of the pixel in the original array.
-        side = np.take(raveled, raveled_indices.astype(int))
-        index = int(int(hash, 2) // 2)
-        if hash.endswith('0'):
-            a_sides[index] = side
-        else:
-            b_sides[index] = side
-
-    return a_sides, b_sides
+def _get_resizing_factors(src_shape: tuple[int, ...],
+                          dst_shape: tuple[int, ...]) -> tuple[float, ...]:
+    """Determine how much each axis is resized by."""
+    src_ends = [n - 1 for n in src_shape]
+    dst_ends = [n - 1 for n in dst_shape]
+    return tuple(d / s for s, d in zip(src_ends, dst_ends))
 
 
-def _map_resized_array(a: np.ndarray,
-                       size: tuple[int, ...]) -> tuple[np.ndarray, np.ndarray]:
-    """Map out how the values of a grid are spread when the grid
-    is resized.
+def _map_indices_and_distances(shape: tuple[int, ...],
+                               factors: tuple[float, ...]
+                               ) -> tuple[np.ndarray, ...]:
+    """Map the indices for the zero position array and the distances
+    for the distance array for an array resizing interpolation.
     """
-    axes = range(len(size))
-    indices = np.indices(size)
-    new_ends = [s - 1 for s in size]
-    old_ends = [s - 1 for s in a.shape]
-    true_factors = [n / o for n, o in zip(new_ends, old_ends)]
-    whole = indices.copy()
-    parts = indices.copy().astype(float)
+    axes = range(len(shape))
+    indices = np.indices(shape, dtype=float)
     for axis in axes:
-        whole[axis] = (indices[axis] // true_factors[axis])
-        parts[axis] = (indices[axis] / true_factors[axis] - whole[axis])
-    return whole, parts
+        indices[axis] /= factors[axis]
+    src_indices = np.trunc(indices)
+    distances = indices - src_indices
+    return src_indices, distances
+
+
+def _replace_indices_with_values(src: np.ndarray,
+                                 indices: np.ndarray) -> np.ndarray:
+    """Replace the indices in an array with values from another array."""
+    # numpy.take only works in one dimension. We'll need to
+    # ravel the original array to be able to get the values, but
+    # we still need the original shape to calculate the new indices.
+    src_shape = src.shape
+    raveled = np.ravel(src)
+
+    # Calculate the raveled indices for each dimension.
+    num_dim = len(src_shape)
+    axes = range(num_dim)
+    raveled_shape = (indices.shape[0], *indices.shape[2:])
+    raveled_indices = np.zeros((raveled_shape), dtype=int)
+    for axis in axes:
+        remaining_dims = src_shape[axis + 1:]
+        axis_mod = prod(remaining_dims)
+        raveled_indices += indices[:, axis] * axis_mod
+
+    # Return the values from the original array.
+    result = np.take(raveled, raveled_indices.astype(int))
+    return result
 
 
 if __name__ == '__main__':
-    from math import prod
-    size = (3, 3, 3)
-    dims = len(size)
-    length = prod([2 ** dims // 2, *size])
-    a = np.arange(length).reshape(tuple([2 ** dims // 2, *size]))
-    b = a ** 2
-    x = np.full((dims, *size), .5)
-    result = ndcerp(a, b, x)
+    a = np.arange(9, dtype=float).reshape((3, 3))
+    a = a ** 2
+    dst_shape = (5, 5)
+    erp = ndcerp
+    result = resize_array(a, dst_shape, erp)
     print_array(result, 2, dec_round=4)

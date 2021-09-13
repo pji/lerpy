@@ -3,6 +3,7 @@ test_lerpy
 ~~~~~~~~~~
 """
 from math import prod
+import unittest as ut
 
 import numpy as np
 
@@ -11,6 +12,111 @@ from tests.common import ArrayTestCase
 
 
 # Test cases.
+class BuildResizingMatricesTestCase(ArrayTestCase):
+    def test_build_matrix_increase_size(self):
+        """Given an original size and a final size, return two arrays
+        of indexes and one of distances that can be used to interpolate
+        the values of the resized array.
+        """
+        # Expected value.
+        exp_a = np.array([
+            [
+                [
+                    [0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0],
+                    [1, 1, 1, 1, 1],
+                    [1, 1, 1, 1, 1],
+                    [2, 2, 2, 2, 2],
+                ],
+                [
+                    [0, 0, 1, 1, 2],
+                    [0, 0, 1, 1, 2],
+                    [0, 0, 1, 1, 2],
+                    [0, 0, 1, 1, 2],
+                    [0, 0, 1, 1, 2],
+                ],
+            ],
+            [
+                [
+                    [1, 1, 1, 1, 1],
+                    [1, 1, 1, 1, 1],
+                    [2, 2, 2, 2, 2],
+                    [2, 2, 2, 2, 2],
+                    [2, 2, 2, 2, 2],
+                ],
+                [
+                    [0, 0, 1, 1, 2],
+                    [0, 0, 1, 1, 2],
+                    [0, 0, 1, 1, 2],
+                    [0, 0, 1, 1, 2],
+                    [0, 0, 1, 1, 2],
+                ],
+            ],
+        ])
+        exp_b = np.array([
+            [
+                [
+                    [0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0],
+                    [1, 1, 1, 1, 1],
+                    [1, 1, 1, 1, 1],
+                    [2, 2, 2, 2, 2],
+                ],
+                [
+                    [1, 1, 2, 2, 2],
+                    [1, 1, 2, 2, 2],
+                    [1, 1, 2, 2, 2],
+                    [1, 1, 2, 2, 2],
+                    [1, 1, 2, 2, 2],
+                ],
+            ],
+            [
+                [
+                    [1, 1, 1, 1, 1],
+                    [1, 1, 1, 1, 1],
+                    [2, 2, 2, 2, 2],
+                    [2, 2, 2, 2, 2],
+                    [2, 2, 2, 2, 2],
+                ],
+                [
+                    [1, 1, 2, 2, 2],
+                    [1, 1, 2, 2, 2],
+                    [1, 1, 2, 2, 2],
+                    [1, 1, 2, 2, 2],
+                    [1, 1, 2, 2, 2],
+                ],
+            ],
+        ])
+        exp_x = np.array([
+            [
+                [0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
+                [0.5000, 0.5000, 0.5000, 0.5000, 0.5000],
+                [0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
+                [0.5000, 0.5000, 0.5000, 0.5000, 0.5000],
+                [0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
+            ],
+            [
+                [0.0000, 0.5000, 0.0000, 0.5000, 0.0000],
+                [0.0000, 0.5000, 0.0000, 0.5000, 0.0000],
+                [0.0000, 0.5000, 0.0000, 0.5000, 0.0000],
+                [0.0000, 0.5000, 0.0000, 0.5000, 0.0000],
+                [0.0000, 0.5000, 0.0000, 0.5000, 0.0000],
+            ],
+        ])
+
+        # Test data and state.
+        src_shape = (3, 3)
+        dst_shape = (5, 5)
+
+        # Run test.
+        act_a, act_b, act_x = lp.build_resizing_matrices(src_shape, dst_shape)
+
+        # Determine test result.
+        self.assertArrayEqual(exp_a, act_a)
+        self.assertArrayEqual(exp_b, act_b)
+        self.assertArrayEqual(exp_x, act_x)
+
+
 class CubicInterpolcationTestCase(ArrayTestCase):
     def test_cubic_interpolation(self):
         """Given four arrays of values named a, b, c, and d and an
@@ -338,3 +444,56 @@ class ResizeArrayTestCase(ArrayTestCase):
 
         # Determine test result.
         self.assertArrayEqual(exp, act)
+
+    def test_shrink_array(self):
+        """If the new size is smaller than the original size, the
+        returned array should be smaller.
+        """
+        # Expected value.
+        exp = np.array([
+            [1, 3, 5],
+            [3, 3, 3],
+            [5, 3, 1],
+        ])
+
+        # Test data and state.
+        a = np.array([
+            [1, 2, 3, 4, 5],
+            [2, 3, 3, 3, 4],
+            [3, 3, 3, 3, 3],
+            [4, 3, 3, 3, 2],
+            [5, 4, 3, 2, 1],
+        ])
+        size = (3, 3)
+
+        # Run test.
+        act = lp.resize_array(a, size)
+
+        # Determine test result.
+        self.assertArrayEqual(exp, act)
+
+    def test_use_ndcerp(self):
+        """Given the n-dimensional cubic interpolation function,
+        the resizing should use it for interpolation instead of the
+        n-dimensional linear interpolation function.
+        """
+        # Expected values.
+        exp = np.array([
+            [0.0000, 0.3125, 1.0000, 2.5000, 4.0000],
+            [4.3164, 5.8906, 8.2617, 11.3125, 14.5938],
+            [9.0000, 11.9375, 16.0000, 20.5000, 25.0000],
+            [22.1523, 26.4688, 32.2852, 38.3125, 44.7812],
+            [36.0000, 41.5625, 49.0000, 56.5000, 64.0000],
+        ])
+
+        # Test data and state.
+        a = np.arange(9, dtype=float).reshape((3, 3))
+        a = a ** 2
+        size = (5, 5)
+        erp = lp.ndcerp
+
+        # Run test.
+        act = lp.resize_array(a, size, erp)
+
+        # Determine test result.
+        self.assertArrayEqual(exp, act, round_=True)
