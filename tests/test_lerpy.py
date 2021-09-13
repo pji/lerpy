@@ -2,7 +2,7 @@
 test_lerpy
 ~~~~~~~~~~
 """
-import unittest as ut
+from math import prod
 
 import numpy as np
 
@@ -91,6 +91,96 @@ class LinearInterpolationTestCase(ArrayTestCase):
 
         # Determine test result.
         self.assertEqual(exp, act)
+
+
+class NDimensionalInterpolationTestCase(ArrayTestCase):
+    def test_wrong_number_of_points(self):
+        """If the passed values do not contain enough points to
+        perform the interpolation over multiple dimensions, raise
+        a ValueError exception.
+        """
+        # Expected values.
+        exp_ex = ValueError
+        exp_msg = 'Not the correct number of points for the dimensions.'
+
+        # Test values and state.
+        size = (3, 3, 3)
+        dims = len(size)
+        ab_shape = tuple([2 * dims // 2, *size])      # Should be 2 ** dims.
+        length = prod(ab_shape)
+        a = np.arange(length).reshape(ab_shape)
+        b = a ** 2
+        x = np.full((dims, *size), .5)
+
+        # Run test and determine result.
+        with self.assertRaisesRegex(exp_ex, exp_msg):
+            act = lp.n_dimensional_interpolation(a, b, x, lp.lerp)
+
+
+class NDimensionalCubicInterpolationTestCase(ArrayTestCase):
+    def test_two_dimensions(self):
+        '''Given two arrays of values and an array of distances, return
+        an array with the bilinear interpolation of the value arrays.
+        '''
+        # Expected values.
+        exp = np.array([
+            [20, 25, 34],
+            [39, 48, 60],
+            [68, 79, 95],
+        ])
+
+        # Test values and state.
+        size = (3, 3)
+        dims = len(size)
+        ab_shape = tuple([2 ** dims // 2, *size])
+        length = prod(ab_shape)
+        a = np.arange(length).reshape(ab_shape)
+        b = a ** 2
+        x = np.full((dims, *size), .5)
+
+        # Run test.
+        act = lp.n_dimensional_cubic_interpolation(a, b, x)
+
+        # Determine test result.
+        self.assertArrayEqual(exp, act)
+
+    def test_three_dimensions(self):
+        '''The interpolation should still work with three dimensional
+        arrays.
+        '''
+        # Expected values.
+        exp = np.array([
+            [
+                [1282, 1324, 1382],
+                [1408, 1455, 1516],
+                [1544, 1594, 1659],
+            ],
+            [
+                [1688, 1742, 1811],
+                [1843, 1898, 1972],
+                [2005, 2064, 2142],
+            ],
+            [
+                [2177, 2239, 2321],
+                [2358, 2423, 2509],
+                [2548, 2616, 2706],
+            ],
+        ])
+
+        # Test values and state.
+        size = (3, 3, 3)
+        dims = len(size)
+        ab_shape = tuple([2 ** dims // 2, *size])
+        length = prod(ab_shape)
+        a = np.arange(length).reshape(ab_shape)
+        b = a ** 2
+        x = np.full((dims, *size), .5)
+
+        # Run test.
+        act = lp.n_dimensional_cubic_interpolation(a, b, x)
+
+        # Determine test result.
+        self.assertArrayEqual(exp, act)
 
 
 class NDimensionalLinearInterpolationTestCase(ArrayTestCase):

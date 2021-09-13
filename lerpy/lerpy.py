@@ -2,9 +2,10 @@
 lerpy
 ~~~~~
 
-Linear interpolation functions.
+Python interpolation functions.
 """
-from typing import Optional
+from functools import partial
+from typing import Callable, Optional
 
 import numpy as np
 
@@ -81,16 +82,17 @@ def linear_interpolation(a: np.ndarray,
     return a * (1 - x) + b * x
 
 
-def n_dimensional_linear_interpolation(a: np.ndarray,
-                                       b: np.ndarray,
-                                       x: np.ndarray) -> np.ndarray:
-    """Interpolate the values of each pixel of image data.
+def n_dimensional_interpolation(a: np.ndarray,
+                                b: np.ndarray,
+                                x: np.ndarray,
+                                interpolator: Callable) -> np.ndarray:
+    """Perform an interpolation over multiple dimensions.
 
     :param a: The "left" values.
     :param b: The "right" values.
     :param x: An array of how close the location of the final value
         should be to the "left" value.
-    :return: A :class:ndarray object.
+    :return: A :class:nd.array object.
     :rtype: numpy.ndarray
 
     Usage::
@@ -101,24 +103,52 @@ def n_dimensional_linear_interpolation(a: np.ndarray,
         >>> b = np.full((2, 3, 3), 255, dtype=int)
         >>> x = np.linspace(0.0, 1.0, 18, True, False, float)
         >>> x = x.reshape((2, 3, 3))
-        >>> n_dimensional_linear_interpolation(a, b, x)
+        >>> n_dimensional_interpolation(a, b, x, lerp)
         array([[135, 150, 165],
                [179, 194, 210],
                [225, 240, 255]])
     """
-    if len(x) > 1:
-        lerped = lerp(a, b, x[-1])
-        a = lerped[::2]
-        b = lerped[1::2]
-        return n_dimensional_linear_interpolation(a, b, x[:-1])
+    # N-dimensional interpolation uses the nearest points to make a
+    # reasonable guess at the value of a point between them. The
+    # number of points used is proportional to the number of
+    # dimensions. This will do a quick check to make sure enough
+    # points were supplied for the interpolation.
+    if len(a) + len(b) != 2 ** len(x):
+        msg = 'Not the correct number of points for the dimensions.'
+        raise ValueError(msg)
 
-    result = lerp(a, b, x[0])
+    # Recursively interpolate the points.
+    if len(x) > 1:
+        interpolated = interpolator(a, b, x[-1])
+        a = interpolated[::2]
+        b = interpolated[1::2]
+        return n_dimensional_interpolation(a, b, x[:-1], interpolator)
+
+    # The extra dimension in the result is caused by the extra
+    # dimension in a, b, and x to hold the arrays that will be
+    # interpolated. The only way to avoid it would be to iterate
+    # through a, b, and x rather than just doing the math over all
+    # of them at once, but that would be much slower.
+    result = interpolator(a, b, x[0])
     return result[0]
+
+
+# Partial function definitions for specific n-dimensional interpolations.
+n_dimensional_cubic_interpolation = partial(
+    n_dimensional_interpolation,
+    interpolator=cubic_interpolation
+)
+n_dimensional_linear_interpolation = partial(
+    n_dimensional_interpolation,
+    interpolator=linear_interpolation
+)
 
 
 # Function aliases.
 cerp = cubic_interpolation
 lerp = linear_interpolation
+nderp = n_dimensional_interpolation
+ndcerp = n_dimensional_cubic_interpolation
 ndlerp = n_dimensional_linear_interpolation
 
 
@@ -233,10 +263,12 @@ def _map_resized_array(a: np.ndarray,
 
 
 if __name__ == '__main__':
-    a_ = np.array([0.0, 0.0, 1.0, 4.0])
-    a = np.array([0.0, 1.0, 4.0, 9.0])
-    b = np.array([1.0, 4.0, 9.0, 16.0])
-    b_ = np.array([4.0, 9.0, 16.0, 16.0])
-    x = np.array([0.5, 0.5, 0.5, 0.5])
-    result = cerp(a, b, x, a_, b_)
+    from math import prod
+    size = (3, 3, 3)
+    dims = len(size)
+    length = prod([2 ** dims // 2, *size])
+    a = np.arange(length).reshape(tuple([2 ** dims // 2, *size]))
+    b = a ** 2
+    x = np.full((dims, *size), .5)
+    result = ndcerp(a, b, x)
     print_array(result, 2, dec_round=4)
