@@ -10,6 +10,8 @@ numpy = "*"
 pycodestyle = "*"
 mypy = "*"
 rstcheck = "*"
+opencv-python = "*"
+imgwriter = {path = "./../imgwriter"}
 
 [requires]
 python_version = "3.9"
