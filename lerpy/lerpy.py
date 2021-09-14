@@ -296,12 +296,3 @@ def _replace_indices_with_values(src: np.ndarray,
     # Return the values from the original array.
     result = np.take(raveled, raveled_indices.astype(int))
     return result
-
-
-if __name__ == '__main__':
-    a = np.arange(9, dtype=float).reshape((3, 3))
-    a = a ** 2
-    dst_shape = (5, 5)
-    erp = ndcerp
-    result = resize_array(a, dst_shape, erp)
-    print_array(result, 2, dec_round=4)
