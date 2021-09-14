@@ -209,6 +209,11 @@ def build_resizing_matrices(src_shape: tuple[int, ...],
     return a, b, x
 
 
+def magnify_size(size: tuple[int, ...], factor: int) -> tuple[int, ...]:
+    """Magnify the shape of an array."""
+    return tuple(int(n * factor) for n in size)
+
+
 def resize_array(src: np.ndarray,
                  size: tuple[int, ...],
                  interpolator: Optional[Callable] = None) -> np.ndarray:
@@ -254,9 +259,13 @@ def _build_relative_position_masks(dimensions: int) -> list[str]:
 def _get_resizing_factors(src_shape: tuple[int, ...],
                           dst_shape: tuple[int, ...]) -> tuple[float, ...]:
     """Determine how much each axis is resized by."""
-    src_ends = [n - 1 for n in src_shape]
-    dst_ends = [n - 1 for n in dst_shape]
-    return tuple(d / s for s, d in zip(src_ends, dst_ends))
+    # The ternary is a quick fix for cases where there are dimensions
+    # of length one. It may cause weird effects, so a more thoughtful
+    # fix would be good in the future.
+    src_ends = [n - 1 if n != 1 else 1 for n in src_shape]
+    dst_ends = [n - 1 if n != 1 else 1 for n in dst_shape]
+    factors = tuple(d / s for s, d in zip(src_ends, dst_ends))
+    return factors
 
 
 def _map_indices_and_distances(shape: tuple[int, ...],

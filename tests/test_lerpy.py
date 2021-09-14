@@ -11,112 +11,7 @@ from lerpy import lerpy as lp
 from tests.common import ArrayTestCase
 
 
-# Test cases.
-class BuildResizingMatricesTestCase(ArrayTestCase):
-    def test_build_matrix_increase_size(self):
-        """Given an original size and a final size, return two arrays
-        of indexes and one of distances that can be used to interpolate
-        the values of the resized array.
-        """
-        # Expected value.
-        exp_a = np.array([
-            [
-                [
-                    [0, 0, 0, 0, 0],
-                    [0, 0, 0, 0, 0],
-                    [1, 1, 1, 1, 1],
-                    [1, 1, 1, 1, 1],
-                    [2, 2, 2, 2, 2],
-                ],
-                [
-                    [0, 0, 1, 1, 2],
-                    [0, 0, 1, 1, 2],
-                    [0, 0, 1, 1, 2],
-                    [0, 0, 1, 1, 2],
-                    [0, 0, 1, 1, 2],
-                ],
-            ],
-            [
-                [
-                    [1, 1, 1, 1, 1],
-                    [1, 1, 1, 1, 1],
-                    [2, 2, 2, 2, 2],
-                    [2, 2, 2, 2, 2],
-                    [2, 2, 2, 2, 2],
-                ],
-                [
-                    [0, 0, 1, 1, 2],
-                    [0, 0, 1, 1, 2],
-                    [0, 0, 1, 1, 2],
-                    [0, 0, 1, 1, 2],
-                    [0, 0, 1, 1, 2],
-                ],
-            ],
-        ])
-        exp_b = np.array([
-            [
-                [
-                    [0, 0, 0, 0, 0],
-                    [0, 0, 0, 0, 0],
-                    [1, 1, 1, 1, 1],
-                    [1, 1, 1, 1, 1],
-                    [2, 2, 2, 2, 2],
-                ],
-                [
-                    [1, 1, 2, 2, 2],
-                    [1, 1, 2, 2, 2],
-                    [1, 1, 2, 2, 2],
-                    [1, 1, 2, 2, 2],
-                    [1, 1, 2, 2, 2],
-                ],
-            ],
-            [
-                [
-                    [1, 1, 1, 1, 1],
-                    [1, 1, 1, 1, 1],
-                    [2, 2, 2, 2, 2],
-                    [2, 2, 2, 2, 2],
-                    [2, 2, 2, 2, 2],
-                ],
-                [
-                    [1, 1, 2, 2, 2],
-                    [1, 1, 2, 2, 2],
-                    [1, 1, 2, 2, 2],
-                    [1, 1, 2, 2, 2],
-                    [1, 1, 2, 2, 2],
-                ],
-            ],
-        ])
-        exp_x = np.array([
-            [
-                [0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                [0.5000, 0.5000, 0.5000, 0.5000, 0.5000],
-                [0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-                [0.5000, 0.5000, 0.5000, 0.5000, 0.5000],
-                [0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
-            ],
-            [
-                [0.0000, 0.5000, 0.0000, 0.5000, 0.0000],
-                [0.0000, 0.5000, 0.0000, 0.5000, 0.0000],
-                [0.0000, 0.5000, 0.0000, 0.5000, 0.0000],
-                [0.0000, 0.5000, 0.0000, 0.5000, 0.0000],
-                [0.0000, 0.5000, 0.0000, 0.5000, 0.0000],
-            ],
-        ])
-
-        # Test data and state.
-        src_shape = (3, 3)
-        dst_shape = (5, 5)
-
-        # Run test.
-        act_a, act_b, act_x = lp.build_resizing_matrices(src_shape, dst_shape)
-
-        # Determine test result.
-        self.assertArrayEqual(exp_a, act_a)
-        self.assertArrayEqual(exp_b, act_b)
-        self.assertArrayEqual(exp_x, act_x)
-
-
+# Test cases for interpolators.
 class CubicInterpolcationTestCase(ArrayTestCase):
     def test_cubic_interpolation(self):
         """Given four arrays of values named a, b, c, and d and an
@@ -344,6 +239,131 @@ class NDimensionalLinearInterpolationTestCase(ArrayTestCase):
 
         # Determine test result.
         self.assertArrayEqual(exp, act)
+
+
+# Test cases for utilities.
+class BuildResizingMatricesTestCase(ArrayTestCase):
+    def test_build_matrix_increase_size(self):
+        """Given an original size and a final size, return two arrays
+        of indexes and one of distances that can be used to interpolate
+        the values of the resized array.
+        """
+        # Expected value.
+        exp_a = np.array([
+            [
+                [
+                    [0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0],
+                    [1, 1, 1, 1, 1],
+                    [1, 1, 1, 1, 1],
+                    [2, 2, 2, 2, 2],
+                ],
+                [
+                    [0, 0, 1, 1, 2],
+                    [0, 0, 1, 1, 2],
+                    [0, 0, 1, 1, 2],
+                    [0, 0, 1, 1, 2],
+                    [0, 0, 1, 1, 2],
+                ],
+            ],
+            [
+                [
+                    [1, 1, 1, 1, 1],
+                    [1, 1, 1, 1, 1],
+                    [2, 2, 2, 2, 2],
+                    [2, 2, 2, 2, 2],
+                    [2, 2, 2, 2, 2],
+                ],
+                [
+                    [0, 0, 1, 1, 2],
+                    [0, 0, 1, 1, 2],
+                    [0, 0, 1, 1, 2],
+                    [0, 0, 1, 1, 2],
+                    [0, 0, 1, 1, 2],
+                ],
+            ],
+        ])
+        exp_b = np.array([
+            [
+                [
+                    [0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0],
+                    [1, 1, 1, 1, 1],
+                    [1, 1, 1, 1, 1],
+                    [2, 2, 2, 2, 2],
+                ],
+                [
+                    [1, 1, 2, 2, 2],
+                    [1, 1, 2, 2, 2],
+                    [1, 1, 2, 2, 2],
+                    [1, 1, 2, 2, 2],
+                    [1, 1, 2, 2, 2],
+                ],
+            ],
+            [
+                [
+                    [1, 1, 1, 1, 1],
+                    [1, 1, 1, 1, 1],
+                    [2, 2, 2, 2, 2],
+                    [2, 2, 2, 2, 2],
+                    [2, 2, 2, 2, 2],
+                ],
+                [
+                    [1, 1, 2, 2, 2],
+                    [1, 1, 2, 2, 2],
+                    [1, 1, 2, 2, 2],
+                    [1, 1, 2, 2, 2],
+                    [1, 1, 2, 2, 2],
+                ],
+            ],
+        ])
+        exp_x = np.array([
+            [
+                [0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
+                [0.5000, 0.5000, 0.5000, 0.5000, 0.5000],
+                [0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
+                [0.5000, 0.5000, 0.5000, 0.5000, 0.5000],
+                [0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
+            ],
+            [
+                [0.0000, 0.5000, 0.0000, 0.5000, 0.0000],
+                [0.0000, 0.5000, 0.0000, 0.5000, 0.0000],
+                [0.0000, 0.5000, 0.0000, 0.5000, 0.0000],
+                [0.0000, 0.5000, 0.0000, 0.5000, 0.0000],
+                [0.0000, 0.5000, 0.0000, 0.5000, 0.0000],
+            ],
+        ])
+
+        # Test data and state.
+        src_shape = (3, 3)
+        dst_shape = (5, 5)
+
+        # Run test.
+        act_a, act_b, act_x = lp.build_resizing_matrices(src_shape, dst_shape)
+
+        # Determine test result.
+        self.assertArrayEqual(exp_a, act_a)
+        self.assertArrayEqual(exp_b, act_b)
+        self.assertArrayEqual(exp_x, act_x)
+
+
+class MagnifySize(ArrayTestCase):
+    def test_magnify_size(self):
+        """Given the shape of an array and a magnification factor,
+        return the magnified shape of the array.
+        """
+        # Expected values.
+        exp = (10, 10, 10)
+
+        # Test data and state.
+        size = (5, 5, 5)
+        factor = 2.0
+
+        # Run test.
+        act = lp.magnify_size(size, factor)
+
+        # Determine test result.
+        self.assertTupleEqual(exp, act)
 
 
 class ResizeArrayTestCase(ArrayTestCase):
