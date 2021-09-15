@@ -92,12 +92,12 @@ def main() -> None:
 
     # Determine which interpolation function to use for the resize.
     erp = INTERPOLATIONS[args.interpolation]
-    
+
     # You have to be either magnifying or resizing.
     if not args.magnify and not args.size:
         msg = 'Must specify either a magnification factor or new size.'
         raise ValueError(msg)
-    
+
     # You can't both magnify and resize.
     elif args.magnify and args.size:
         msg = 'Must only specify a magnification factor or new side.'
