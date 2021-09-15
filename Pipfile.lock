@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "d302ff5819bcdb577c1fee559969fab91ed35ea6b8c641bbd0d1b72153c13e73"
+            "sha256": "3f995f9503745032d18c50029abdae95659b5a8acb75e8026c91915ddf996051"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -16,6 +16,10 @@
         ]
     },
     "default": {
+        "imgwriter": {
+            "path": "./../imgwriter",
+            "version": "==0.2.0"
+        },
         "numpy": {
             "hashes": [
                 "sha256:09858463db6dd9f78b2a1a05c93f3b33d4f65975771e90d2cf7aadb7c2f66edf",
@@ -64,7 +68,7 @@
         },
         "imgwriter": {
             "path": "./../imgwriter",
-            "version": "==0.0.5"
+            "version": "==0.2.0"
         },
         "mypy": {
             "hashes": [

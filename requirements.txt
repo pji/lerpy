@@ -6,4 +6,5 @@
 #
 
 -i https://pypi.org/simple
+./../imgwriter
 numpy==1.21.2
