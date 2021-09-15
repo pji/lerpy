@@ -41,15 +41,6 @@ def get_cli_args() -> None:
             },
         },
         {
-            'args': ('-s', '--size', ),
-            'kwargs': {
-                'type': int,
-                'nargs': 2,
-                'action': 'store',
-                'help': 'The dimensions to resize to.'
-            },
-        },
-        {
             'args': ('-i', '--interpolation', ),
             'kwargs': {
                 'type': str,
@@ -57,6 +48,23 @@ def get_cli_args() -> None:
                 'default': next(iter(INTERPOLATIONS)),
                 'action': 'store',
                 'help': 'The interpolation method for the resize.'
+            },
+        },
+        {
+            'args': ('-m', '--magnify', ),
+            'kwargs': {
+                'type': float,
+                'action': 'store',
+                'help': 'The magnification factor for the resize.'
+            },
+        },
+        {
+            'args': ('-s', '--size', ),
+            'kwargs': {
+                'type': int,
+                'nargs': 2,
+                'action': 'store',
+                'help': 'The dimensions to resize to.'
             },
         },
     )
@@ -81,16 +89,38 @@ def main() -> None:
 
     # Read in the image to resize.
     src = iw.read_image(args.srcfile)
-    print(src)
 
     # Determine which interpolation function to use for the resize.
     erp = INTERPOLATIONS[args.interpolation]
-    if len(src.shape) == 4:
-        dst_shape = (src.shape[0], *args.size, src.shape[-1])
-    elif len(src.shape) == 3:
-        dst_shape = (src.shape[0], *args.size)
-    else:
-        dst_shape = tuple(args.size)
+    
+    # You have to be either magnifying or resizing.
+    if not args.magnify and not args.size:
+        msg = 'Must specify either a magnification factor or new size.'
+        raise ValueError(msg)
+    
+    # You can't both magnify and resize.
+    elif args.magnify and args.size:
+        msg = 'Must only specify a magnification factor or new side.'
+
+    # Calculate the final size if we are magnifying.
+    elif args.magnify and not args.size:
+        src_dims = src.shape
+        if len(src.shape) > 2:
+            src_dims = src_dims[1:3]
+        dst_dims = lp.magnify_size(src_dims, args.magnify)
+        if len(src.shape) > 2:
+            dst_shape = (src.shape[0], *dst_dims)
+        if len(src.shape) == 4:
+            dst_shape = (*dst_shape, src.shape[-1])
+
+    # Handle extra dimensions and the color channels when resizing.
+    elif not args.magnify and args.size:
+        if len(src.shape) == 4:
+            dst_shape = (src.shape[0], *args.size, src.shape[-1])
+        elif len(src.shape) == 3:
+            dst_shape = (src.shape[0], *args.size)
+        else:
+            dst_shape = tuple(args.size)
 
     # Perform the resizing and save the result.
     dst = lp.resize_array(src, dst_shape, erp)
