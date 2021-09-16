@@ -115,6 +115,21 @@ def _build_relative_position_masks(dimensions: int) -> list[str]:
     return sorted(mask)
 
 
+def _calc_raveled_indices(indices: np.ndarray,
+                          src_shape: tuple[int, ...]) -> np.ndarray:
+    """Convert indices for a multidimensional array to indices for
+    that array after it has been raveled.
+    """
+    axes = range(len(src_shape))
+    raveled_shape = (indices.shape[0], *indices.shape[2:])
+    raveled_indices = np.zeros(raveled_shape, dtype=int)
+    for axis in axes:
+        remaining_dims = src_shape[axis + 1:]
+        axis_mod = prod(remaining_dims)
+        raveled_indices += indices[:, axis] * axis_mod
+    return raveled_indices
+
+
 def _get_resizing_factors(src_shape: tuple[int, ...],
                           dst_shape: tuple[int, ...]) -> tuple[float, ...]:
     """Determine how much each axis is resized by."""
@@ -152,14 +167,7 @@ def _replace_indices_with_values(src: np.ndarray,
     raveled = np.ravel(src)
 
     # Calculate the raveled indices for each dimension.
-    num_dim = len(src_shape)
-    axes = range(num_dim)
-    raveled_shape = (indices.shape[0], *indices.shape[2:])
-    raveled_indices = np.zeros((raveled_shape), dtype=int)
-    for axis in axes:
-        remaining_dims = src_shape[axis + 1:]
-        axis_mod = prod(remaining_dims)
-        raveled_indices += indices[:, axis] * axis_mod
+    raveled_indices = _calc_raveled_indices(indices, src_shape)
 
     # Return the values from the original array.
     result = np.take(raveled, raveled_indices.astype(int))
