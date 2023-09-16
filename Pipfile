@@ -5,14 +5,14 @@ name = "pypi"
 
 [packages]
 numpy = "*"
-imgwriter = {path = "./../imgwriter"}
 
 [dev-packages]
 pycodestyle = "*"
 mypy = "*"
 rstcheck = "*"
-imgwriter = {path = "./../imgwriter"}
 opencv-python = "*"
+pytest = "*"
+imgwriter = {file = "../imgwriter"}
 
 [requires]
 python_version = "3.9"

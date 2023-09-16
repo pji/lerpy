@@ -6,20 +6,27 @@ Python interpolation functions.
 """
 from functools import partial
 from math import prod
-from typing import Callable, Optional
+from typing import Callable, Optional, TypeVar, Union
 
 import numpy as np
+from numpy.typing import NDArray
 
 from lerpy.utility import preserves_type, print_array
 
 
+# Types.
+T = TypeVar('T', bound=Union[np.int_, np.float_, np.bool_])
+
+
 # Public interpolation functions.
 @preserves_type
-def cubic_interpolation(a: np.ndarray,
-                        b: np.ndarray,
-                        x: np.ndarray,
-                        a_: Optional[np.ndarray] = None,
-                        b_: Optional[np.ndarray] = None) -> np.ndarray:
+def cubic_interpolation(
+    a: NDArray[T],
+    b: NDArray[T],
+    x: NDArray[T],
+    a_: Optional[NDArray[T]] = None,
+    b_: Optional[NDArray[T]] = None
+) -> NDArray[T]:
     """Perform a cubic interpolation on the values of four arrays.
     This is adapted from code found at:
 
@@ -57,9 +64,11 @@ def cubic_interpolation(a: np.ndarray,
 
 
 @preserves_type
-def linear_interpolation(a: np.ndarray,
-                         b: np.ndarray,
-                         x: np.ndarray) -> np.ndarray:
+def linear_interpolation(
+    a: NDArray[T],
+    b: NDArray[T],
+    x: NDArray[T],
+) -> NDArray[T]:
     """Perform a linear interpolation on the values of two arrays
 
     :param a: The "left" values. The datatype of a also determines the
@@ -83,10 +92,12 @@ def linear_interpolation(a: np.ndarray,
     return a * (1 - x) + b * x
 
 
-def n_dimensional_interpolation(a: np.ndarray,
-                                b: np.ndarray,
-                                x: np.ndarray,
-                                interpolator: Callable) -> np.ndarray:
+def n_dimensional_interpolation(
+    a: NDArray[T],
+    b: NDArray[T],
+    x: NDArray[T],
+    interpolator: Callable[[NDArray[T], NDArray[T], NDArray[T]], NDArray[T]]
+) -> np.ndarray:
     """Perform an interpolation over multiple dimensions.
 
     :param a: The "left" values.

@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.rstcheck]
+report_level = "WARNING"
+ignore_directives = ["autoclass", "autofunction"]
+
+[tool.pytest.ini_options]
+addopts = [
+    "--import-mode=importlib",
+]
+
+[project]
+name = "lerpy"
+version = "0.0.2"
+authors = [
+    {name="Paul J. Iutzi", email="pji@mac.com"},
+]
+description = "Common interpolation algorithms for numpy arrays."
+readme = "README.rst"
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    'numpy',
+]
+
+[project.urls]
+"Homepage" = "https://github.com/pji/lerpy"
+"Documentation" = "https://github.com/pji/lerpy"
+"Source" = "https://github.com/pji/lerpy"
