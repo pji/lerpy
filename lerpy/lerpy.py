@@ -166,15 +166,44 @@ def n_dimensional_interpolation(
     return result[0]
 
 
-# Partial function definitions for specific n-dimensional interpolations.
-n_dimensional_cubic_interpolation = partial(
-    n_dimensional_interpolation,
-    interpolator=cubic_interpolation
-)
-n_dimensional_linear_interpolation = partial(
-    n_dimensional_interpolation,
-    interpolator=linear_interpolation
-)
+def n_dimensional_cubic_interpolation(
+    a: NDArray[T],
+    b: NDArray[T],
+    x: NDArray[np.float_],
+) -> NDArray[T]:
+    """Perform a cubic interpolation over multiple dimensions. This
+    is a shortcut for :func:`lerpy.n_dimensional_interpolation` using
+    :func:`cubic_interpolation` as an interpolator.
+
+    :param a: The "left" values. The datatype of a also determines the
+        datatype of the returned array.
+    :param b: The "right" values.
+    :param x: An array of how close the location of the final value
+        should be to the "left" value.
+    :return: A :class:`numpy.ndarray` object.
+    :rtype: numpy.ndarray
+    """
+    return n_dimensional_interpolation(a, b, x, cubic_interpolation)
+
+
+def n_dimensional_linear_interpolation(
+    a: NDArray[T],
+    b: NDArray[T],
+    x: NDArray[np.float_],
+) -> NDArray[T]:
+    """Perform a linear interpolation over multiple dimensions. This
+    is a shortcut for :func:`lerpy.n_dimensional_interpolation` using
+    :func:`linear_interpolation` as an interpolator.
+
+    :param a: The "left" values. The datatype of a also determines the
+        datatype of the returned array.
+    :param b: The "right" values.
+    :param x: An array of how close the location of the final value
+        should be to the "left" value.
+    :return: A :class:`numpy.ndarray` object.
+    :rtype: numpy.ndarray
+    """
+    return n_dimensional_interpolation(a, b, x, linear_interpolation)
 
 
 # Function aliases.
