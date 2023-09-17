@@ -13,6 +13,8 @@ rstcheck = "*"
 opencv-python = "*"
 pytest = "*"
 imgwriter = {file = "../imgwriter"}
+tox = "*"
+isort = "*"
 
 [requires]
 python_version = "3.9"

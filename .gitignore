@@ -7,3 +7,8 @@
 
 # Ignore macOS files.
 *.DS_Store
+
+# Ignore build files
+build
+dist
+lerpy.egg-info
