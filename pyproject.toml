@@ -7,9 +7,8 @@ report_level = "WARNING"
 ignore_directives = ["autoclass", "autofunction"]
 
 [tool.pytest.ini_options]
-addopts = [
-    "--import-mode=importlib",
-]
+addopts = ["--import-mode=importlib",]
+markers = ['outfile',]
 
 [project]
 name = "lerpy"

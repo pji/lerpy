@@ -4,80 +4,60 @@ test_examples
 
 Unit tests to ensure the provided example code still works.
 """
-import os
 import shutil
-import unittest as ut
+from pathlib import Path
+from subprocess import run
 
 from imgwriter import read_image
+import pytest as pt
 
-from tests.common import ArrayTestCase
+
+# Test fixtures.
+@pt.fixture
+def cleanup(request):
+    """Clean up output files after the test."""
+    files = request.node.get_closest_marker('outfile')
+    yield files.args[0]
+    for file in files.args:
+        path = Path(file)
+        if path.exists():
+            path.unlink()
 
 
-# Test cases.
-class ResizeImageTestCase(ArrayTestCase):
-    example: str = 'resize_image.py'
+@pt.fixture
+def script():
+    """Move the tested script so it can be tested."""
+    script = 'resize_image.py'
+    src_path = Path('examples') / script
+    shutil.copy2(src_path, script)
+    yield script
+    Path(script).unlink()
 
-    def setUp(self):
-        """Set up the test environment."""
-        src_path = f'examples/{self.example}'
-        shutil.copy2(src_path, self.example)
 
-    def tearDown(self):
-        """Clean up after the tests are complete."""
-        os.remove(self.example)
+# Tests for resize_image.py.
+@pt.mark.outfile('__ResizeImageTestCase__test_magnify.jpg')
+def test_resize_image_magnify(script, cleanup):
+    """Given an image file, the save location, and a magnification
+    factor, `resize_image.py` should save the resized image in the
+    save location.
+    """
+    exp_file = 'tests/data/__test_resize_image_after_mag.jpg'
+    src_file = 'tests/data/__test_resize_image_before.jpg'
+    dst_file = cleanup
+    cmd = ['python', script, src_file, dst_file, '-m', '10']
+    run(cmd)
+    assert (read_image(exp_file) == read_image(dst_file)).all()
 
-    def test_magnify(self):
-        """Given an image file, the save location, and a magnification
-        factor, resize_image should save the resized image in the save
-        location.
-        """
-        # Expected value.
-        exp_file = 'tests/data/__test_resize_image_after_mag.jpg'
-        exp = read_image(exp_file)
 
-        # Test data and state.
-        src_file = 'tests/data/__test_resize_image_before.jpg'
-        dst_file = '__ResizeImageTestCase__test_magnify.jpg'
-        options = '-m 10'
-        cmd = f'python {self.example} {src_file} {dst_file} {options}'
-
-        # Run test.
-        try:
-            os.system(cmd)
-
-            # Determine test result.
-            act = read_image(dst_file)
-            self.assertArrayEqual(exp, act, round_=True)
-
-        # Clean up after test.
-        finally:
-            if os.path.exists(dst_file):
-                os.remove(dst_file)
-
-    def test_resize(self):
-        """Given an image file, the save location, and a new size,
-        resize_image should save the resized image in the save
-        location.
-        """
-        # Expected value.
-        exp_file = 'tests/data/__test_resize_image_after.jpg'
-        exp = read_image(exp_file)
-
-        # Test data and state.
-        src_file = 'tests/data/__test_resize_image_before.jpg'
-        dst_file = '__ResizeImageTestCase__test_resize.jpg'
-        options = '-s 10 10'
-        cmd = f'python {self.example} {src_file} {dst_file} {options}'
-
-        # Run test.
-        try:
-            os.system(cmd)
-
-            # Determine test result.
-            act = read_image(dst_file)
-            self.assertArrayEqual(exp, act)
-
-        # Clean up after test.
-        finally:
-            if os.path.exists(dst_file):
-                os.remove(dst_file)
+@pt.mark.outfile('__ResizeImageTestCase__test_resize.jpg')
+def test_resize_image_resize(script, cleanup):
+    """Given an image file, the save location, and a new size,
+    `resize_image.py` should save the resized image in the save
+    location.
+    """
+    exp_file = 'tests/data/__test_resize_image_after.jpg'
+    src_file = 'tests/data/__test_resize_image_before.jpg'
+    dst_file = cleanup
+    cmd = ['python', script, src_file, dst_file, '-s', '10', '10']
+    run(cmd)
+    assert (read_image(exp_file) == read_image(dst_file)).all()
