@@ -4,7 +4,6 @@ __init__
 
 Common interpolation algorithms for numpy arrays.
 """
-__all__ = ['lerpy', 'resize']
 from lerpy.lerpy import (
     cerp,
     cubic_interpolation,
@@ -18,3 +17,4 @@ from lerpy.lerpy import (
     ndlerp
 )
 from lerpy.resize import magnify_size, resize_array
+from lerpy.utility import print_array

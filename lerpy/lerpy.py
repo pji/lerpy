@@ -6,16 +6,12 @@ Python interpolation functions.
 """
 from functools import partial
 from math import prod
-from typing import Callable, Optional, TypeVar, Union
+from typing import Callable, Optional
 
 import numpy as np
 from numpy.typing import NDArray
 
-from lerpy.utility import preserves_type, print_array
-
-
-# Types.
-T = TypeVar('T', bound=Union[np.int_, np.float_, np.bool_])
+from lerpy.utility import Interpolator, T, preserves_type
 
 
 # Public interpolation functions.
@@ -23,28 +19,53 @@ T = TypeVar('T', bound=Union[np.int_, np.float_, np.bool_])
 def cubic_interpolation(
     a: NDArray[T],
     b: NDArray[T],
-    x: NDArray[T],
+    x: NDArray[np.float_],
     a_: Optional[NDArray[T]] = None,
     b_: Optional[NDArray[T]] = None
 ) -> NDArray[T]:
     """Perform a cubic interpolation on the values of four arrays.
-    This is adapted from code found at:
+    This is adapted from code found at: `Cubic Interpolation`_
 
-        https://www.paulinternet.nl/?page=bicubic
+    .. _`Cubic Interpolation`: https://www.paulinternet.nl/?page=bicubic
 
     :param a: The closest value on the "left" side.
     :param b: The closest value on the "right" side.
     :param x: How close the final value is to the closest "left" value.
     :param a_: (Optional.) The farther value on the "left" side.
     :param b_: (Optional.) The farther value on the "right" side.
-    :return: A :class:ndarray object.
+    :return: A :class:`numpy.ndarray` object.
     :rtype: numpy.ndarray
+
+    Usage::
+
+        >>> import numpy as np
+        >>>
+        >>> base = np.array([0, 1, 2, 3, 4, 5], dtype=float)
+        >>> a = base[1:4]
+        >>> b = base[2:5]
+        >>> a_ = base[:3]
+        >>> b_ = base[3:]
+        >>> x = np.array([0.5, 0.5, 0.5])
+        >>> cubic_interpolation(a, b, x, a_, b_)
+        array([1.5, 2.5, 3.5])
+
+    You can do the interpolation if you don't have the furthest data
+    points. It will just be inaccurate at the edges because of the
+    missing data::
+
+        >>> base = np.array([1, 2, 3, 4], dtype=float)
+        >>> a = base[:3]
+        >>> b = base[1:]
+        >>> x = np.array([0.5, 0.5, 0.5])
+        >>> cubic_interpolation(a, b, x)
+        array([1.4375, 2.5   , 3.5625])
+
     """
     # Cubic interpolation needs two points to the left of the
     # interpolation spot and two points to the right. If only two
-    # points were given, assume they are the closest points on
-    # side of the interpolation and create arrays for the missing
-    # further points using the given points.
+    # points were given, assume they are the points on the closest
+    # side of the interpolation and create arrays for the furthest
+    # points using the given points.
     #
     # Note: At the edges, this guesses the values by repeating values.
     # This isn't as accurate as passing in better values with a_
@@ -67,7 +88,7 @@ def cubic_interpolation(
 def linear_interpolation(
     a: NDArray[T],
     b: NDArray[T],
-    x: NDArray[T],
+    x: NDArray[np.float_],
 ) -> NDArray[T]:
     """Perform a linear interpolation on the values of two arrays
 
@@ -76,7 +97,7 @@ def linear_interpolation(
     :param b: The "right" values.
     :param x: An array of how close the location of the final value
         should be to the "left" value.
-    :return: A :class:ndarray object.
+    :return: A :class:`numpy.ndarray` object.
     :rtype: numpy.ndarray
 
     Usage::
@@ -95,16 +116,16 @@ def linear_interpolation(
 def n_dimensional_interpolation(
     a: NDArray[T],
     b: NDArray[T],
-    x: NDArray[T],
-    interpolator: Callable[[NDArray[T], NDArray[T], NDArray[T]], NDArray[T]]
-) -> np.ndarray:
+    x: NDArray[np.float_],
+    interpolator: Interpolator
+) -> NDArray[T]:
     """Perform an interpolation over multiple dimensions.
 
     :param a: The "left" values.
     :param b: The "right" values.
     :param x: An array of how close the location of the final value
         should be to the "left" value.
-    :return: A :class:nd.array object.
+    :return: A :class:`numpy.ndarray` object.
     :rtype: numpy.ndarray
 
     Usage::

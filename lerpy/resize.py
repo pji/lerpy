@@ -5,23 +5,26 @@ resize
 Functions for resizing numpy arrays through interpolation.
 """
 from math import prod
-from typing import Callable, Optional
+from typing import Callable, Optional, TypeVar, Union
 
 import numpy as np
+from numpy.typing import NDArray
 
 from lerpy import lerpy as lp
+from lerpy.utility import Interpolator, T
 
 
 # Public functions.
-def build_resizing_matrices(src_shape: tuple[int, ...],
-                            dst_shape: tuple[int, ...]
-                            ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+def build_resizing_matrices(
+    src_shape: tuple[int, ...],
+    dst_shape: tuple[int, ...]
+) -> tuple[NDArray[np.int_], NDArray[np.int_], NDArray[np.float_]]:
     """Create the indexing and distance arrays needed to interpolate
     values when resizing an array.
 
     :param src_shape: The original shape of the array.
     :param dst_shape: The resized shape of the array.
-    :return: A :class:tuple object.
+    :return: A :class:`tuple` object.
     :rtype: tuple
     """
     # Interpolation guesses a value between known data values. To
@@ -68,39 +71,44 @@ def build_resizing_matrices(src_shape: tuple[int, ...],
     return a, b, x
 
 
-def magnify_size(size: tuple[int, ...], factor: int) -> tuple[int, ...]:
-    """Magnify the shape of an array."""
-    return tuple(int(n * factor) for n in size)
+def magnify_size(shape: tuple[int, ...], factor: int) -> tuple[int, ...]:
+    """Magnify the shape of an array.
+
+    :param shape: The original shape of the array.
+    :param factor: The magnification factor.
+    :return: A :class:`tuple` containing the shape of the magnified array.
+    """
+    return tuple(int(n * factor) for n in shape)
 
 
-def resize_array(src: np.ndarray,
-                 size: tuple[int, ...],
-                 interpolator: Optional[Callable] = None) -> np.ndarray:
-    """Resize an two dimensional array using linear interpolation.
+def resize_array(
+    src: NDArray[T],
+    shape: tuple[int, ...],
+    interpolator: Interpolator = lp.ndlerp
+) -> NDArray[T]:
+    """Resize a two dimensional array using an interpolation.
 
-    :param a: The array to resize. The array is expected to have at
+    :param src: The array to resize. The array is expected to have at
         least two dimensions.
-    :param size: The shape for the resized array.
+    :param shape: The shape for the resized array.
     :param interpolator: The interpolation algorithm for the resizing.
-    :return: A :class:ndarray object.
+    :return: A :class:`numpy.ndarray` object.
     :rtype: numpy.ndarray
     """
     # Perform defensive actions to prevent unneeded processing if
     # the array won't actually change and to make sure any changes
     # to the array won't have unexpected side effects.
-    if size == src.shape:
+    if shape == src.shape:
         return src
     src = src.copy()
 
     # Map out the relationship between the old space and the
     # new space.
-    a, b, x = build_resizing_matrices(src.shape, size)
-    a = _replace_indices_with_values(src, a)
-    b = _replace_indices_with_values(src, b)
+    a_index, b_index, x = build_resizing_matrices(src.shape, shape)
+    a = _replace_indices_with_values(src, a_index)
+    b = _replace_indices_with_values(src, b_index)
 
     # Perform the interpolation using the mapped space and return.
-    if interpolator is None:
-        interpolator = lp.ndlerp
     return interpolator(a, b, x)
 
 
@@ -115,8 +123,10 @@ def _build_relative_position_masks(dimensions: int) -> list[str]:
     return sorted(mask)
 
 
-def _calc_raveled_indices(indices: np.ndarray,
-                          src_shape: tuple[int, ...]) -> np.ndarray:
+def _calc_raveled_indices(
+    indices: NDArray[np.int_],
+    src_shape: tuple[int, ...]
+) -> np.ndarray:
     """Convert indices for a multidimensional array to indices for
     that array after it has been raveled.
     """
@@ -130,8 +140,10 @@ def _calc_raveled_indices(indices: np.ndarray,
     return raveled_indices
 
 
-def _get_resizing_factors(src_shape: tuple[int, ...],
-                          dst_shape: tuple[int, ...]) -> tuple[float, ...]:
+def _get_resizing_factors(
+    src_shape: tuple[int, ...],
+    dst_shape: tuple[int, ...]
+) -> tuple[float, ...]:
     """Determine how much each axis is resized by."""
     # The ternary is a quick fix for cases where there are dimensions
     # of length one. It may cause weird effects, so a more thoughtful
@@ -142,9 +154,10 @@ def _get_resizing_factors(src_shape: tuple[int, ...],
     return factors
 
 
-def _map_indices_and_distances(shape: tuple[int, ...],
-                               factors: tuple[float, ...]
-                               ) -> tuple[np.ndarray, ...]:
+def _map_indices_and_distances(
+    shape: tuple[int, ...],
+    factors: tuple[float, ...]
+) -> tuple[NDArray[np.float_], NDArray[np.float_]]:
     """Map the indices for the zero position array and the distances
     for the distance array for an array resizing interpolation.
     """
@@ -157,8 +170,10 @@ def _map_indices_and_distances(shape: tuple[int, ...],
     return src_indices, distances
 
 
-def _replace_indices_with_values(src: np.ndarray,
-                                 indices: np.ndarray) -> np.ndarray:
+def _replace_indices_with_values(
+    src: NDArray[T],
+    indices: NDArray[np.int_]
+) -> NDArray[T]:
     """Replace the indices in an array with values from another array."""
     # numpy.take only works in one dimension. We'll need to
     # ravel the original array to be able to get the values, but
