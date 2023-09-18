@@ -17,6 +17,7 @@ tox = "*"
 isort = "*"
 sphinx = "*"
 furo = "*"
+build = "*"
 
 [requires]
 python_version = "3.9"
