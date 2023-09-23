@@ -18,6 +18,7 @@ isort = "*"
 sphinx = "*"
 furo = "*"
 build = "*"
+lerpy = {file = ".", editable = true}
 
 [requires]
 python_version = "3.9"

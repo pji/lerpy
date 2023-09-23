@@ -1,21 +1,22 @@
 .PHONY: build
 build:
-	# sphinx-build -b html docs/source/ docs/build/html
+	sphinx-build -b html docs/source/ docs/build/html
 	python -m build
-	# twine check dist/*
+	twine check dist/*
 
 .PHONY: clean
 clean:
 	rm -rf docs/build/html
 	rm -rf dist
-	rm -rf lerpy.egg-info
+	rm -rf src/lerpy.egg-info
 	rm -rf tests/__pycache__
 	rm -rf tests/*.pyc
-	rm -rf lerpy/__pycache__
-	rm -rf lerpy/*.pyc
-	rm -rf lerpy/pattern/__pycache__
+	rm -rf src/lerpy/__pycache__
+	rm -rf src/lerpy/*.pyc
+	rm -rf src/lerpy/pattern/__pycache__
 	rm -f *.log
 	rm -f *.json
+	python -m pipenv uninstall lerpy
 
 .PHONY: docs
 docs:
@@ -29,6 +30,7 @@ pre:
 
 .PHONY: test
 test:
+	python -m pipenv install --dev -e .
 	python -m pytest --capture=sys
 
 
