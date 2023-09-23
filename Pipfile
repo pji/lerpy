@@ -12,13 +12,13 @@ mypy = "*"
 rstcheck = "*"
 opencv-python = "*"
 pytest = "*"
-imgwriter = {file = "../imgwriter"}
 tox = "*"
 isort = "*"
 sphinx = "*"
 furo = "*"
 build = "*"
 lerpy = {file = ".", editable = true}
+imgwriter = {file = "../imgwriter"}
 
 [requires]
 python_version = "3.9"

@@ -8,7 +8,6 @@ from pathlib import Path
 from subprocess import run
 
 import pytest as pt
-from imgwriter import read_image
 
 
 # Test utilities.
